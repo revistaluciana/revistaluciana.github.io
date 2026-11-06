@@ -208,6 +208,32 @@ main .wrap { padding-block: 18px 120px; }
 .clear { border: 0; background: none; color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 13px; align-self: center; }
 .toast { position: fixed; left: 50%; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 999px; font-size: 14px; z-index: 30; box-shadow: var(--shadow); }
 
+/* Detalhes do produto */
+[data-open] { cursor: pointer; }
+.more-info { align-self: flex-start; border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 13px; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.pd-scrim { position: fixed; inset: 0; background: rgba(20,10,15,.5); z-index: 24; }
+.pd { position: fixed; z-index: 25; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(820px, calc(100% - 32px)); max-height: calc(100% - 48px); background: var(--surface); border-radius: 20px; overflow: hidden; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); box-shadow: 0 30px 80px rgba(0,0,0,.35); }
+.pd-photo { background: #fff; display: grid; place-items: center; padding: 24px; position: relative; border-right: 1px solid var(--line); }
+.pd-photo img { width: 100%; max-width: 340px; aspect-ratio: 1; object-fit: contain; }
+.pd-info { padding: 22px 24px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.pd-info .line { white-space: normal; }
+.pd-info h2 { font-family: var(--font-display); font-weight: 400; font-size: clamp(22px, 3.2vw, 28px); line-height: 1.15; margin: 0; padding-right: 32px; text-wrap: balance; }
+.pd-info .price .now { font-size: 24px; }
+.pd-desc { font-size: 14.5px; line-height: 1.55; color: var(--ink); border-top: 1px solid var(--line); padding-top: 12px; }
+.pd-desc p { margin: 0 0 8px; }
+.pd-desc ul { margin: 0 0 10px; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.pd-desc h4 { margin: 12px 0 6px; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+.pd-kit { list-style: none; padding: 12px 14px !important; background: var(--accent-soft); border-radius: 12px; }
+.pd-kit li::before { content: "✓ "; color: var(--accent); font-weight: 700; }
+.pd-desc .loading { color: var(--muted); }
+.pd-actions { display: flex; flex-direction: column; gap: 8px; margin-top: auto; padding-top: 6px; }
+.pd-close { position: absolute; top: 12px; right: 12px; z-index: 2; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font-size: 22px; line-height: 1; cursor: pointer; color: var(--ink); }
+@media (max-width: 680px) {
+  .pd { left: 0; right: 0; top: auto; bottom: 0; transform: none; width: 100%; max-height: 92%; border-radius: 20px 20px 0 0; grid-template-columns: 1fr; overflow-y: auto; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .pd-photo { border-right: 0; border-bottom: 1px solid var(--line); padding: 14px; }
+  .pd-photo img { max-width: 220px; }
+  .pd-info { overflow: visible; padding-left: max(18px, env(safe-area-inset-left, 0px)); padding-right: max(18px, env(safe-area-inset-right, 0px)); }
+}
 footer.site { border-top: 1px solid var(--line); }
 footer.site .wrap { padding-block: 20px 100px; font-size: 12px; color: var(--muted); max-width: 1180px; }
 footer.site p { margin: 0 0 6px; max-width: 80ch; }
@@ -306,6 +332,12 @@ footer.site p { margin: 0 0 6px; max-width: 80ch; }
     <button class="clear" id="clear">Esvaziar sacola</button>
   </div>
 </aside>
+<div class="pd-scrim" id="pdScrim" hidden></div>
+<div class="pd" id="pd" role="dialog" aria-modal="true" aria-labelledby="pdTitle" hidden>
+  <button class="pd-close" id="pdClose" aria-label="Fechar detalhes">×</button>
+  <div class="pd-photo" id="pdPhoto"></div>
+  <div class="pd-info" id="pdInfo"></div>
+</div>
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -393,13 +425,14 @@ function cardHTML(x) {
   const ctl = q ? `<div class="qty"><button data-dec="${x.k}" aria-label="Tirar um">−</button><span>${q}</span><button data-inc="${x.k}" aria-label="Pôr mais um">+</button></div>`
                 : `<button class="add" data-inc="${x.k}">Adicionar</button>`;
   return `<article class="card" data-k="${x.k}">
-    <div class="ph" ${src || !x.img ? "" : `data-ph="${x.k}"`}>${ph}${x.off ? `<span class="badge">−${x.off}%</span>` : ""}${S.b === "todas" ? `<span class="brandtag">${x.b === "casa" ? "Casa" : BRANDS[x.b]}</span>` : ""}</div>
+    <div class="ph" data-open="${x.k}" ${src || !x.img ? "" : `data-ph="${x.k}"`}>${ph}${x.off ? `<span class="badge">−${x.off}%</span>` : ""}${S.b === "todas" ? `<span class="brandtag">${x.b === "casa" ? "Casa" : BRANDS[x.b]}</span>` : ""}</div>
     <div class="body">
       ${x.line ? `<div class="line">${esc(x.line)}</div>` : ""}
-      <h3 class="title">${esc(x.t)}</h3>
+      <h3 class="title" data-open="${x.k}">${esc(x.t)}</h3>
       <div class="price">${x.old ? `<span class="old">${brl(x.old)}</span>` : ""}<span class="now ${x.deal ? "deal" : ""}">${brl(x.price)}</span></div>
       ${tierTxt ? `<div class="tiers">${tierTxt}</div>` : ""}
       <div class="code">Cód. ${x.sku}</div>
+      <button class="more-info" data-open="${x.k}">${x.gift ? "Ver o que vem no kit" : "Ver detalhes"}</button>
       ${ctl}
     </div></article>`;
 }
@@ -421,11 +454,12 @@ function featHTML(x) {
   const ctl = q ? `<div class="qty"><button data-dec="${x.k}" aria-label="Tirar um">−</button><span>${q}</span><button data-inc="${x.k}" aria-label="Pôr mais um">+</button></div>`
                 : `<button class="add" data-inc="${x.k}">Adicionar</button>`;
   return `<article class="fcard" data-k="${x.k}">
-    <div class="ph">${src ? `<img src="${src}" alt="${esc(x.t)}" loading="lazy" decoding="async">` : `<span class="ghost"></span>`}${x.off ? `<span class="badge">−${x.off}%</span>` : ""}<span class="brandtag">${x.b === "casa" ? "Casa" : BRANDS[x.b]}</span></div>
+    <div class="ph" data-open="${x.k}">${src ? `<img src="${src}" alt="${esc(x.t)}" loading="lazy" decoding="async">` : `<span class="ghost"></span>`}${x.off ? `<span class="badge">−${x.off}%</span>` : ""}<span class="brandtag">${x.b === "casa" ? "Casa" : BRANDS[x.b]}</span></div>
     <div class="body">
       ${x.old ? `<span class="save">Economize ${brl(x.old - x.price)}</span>` : ""}
-      <h3 class="title">${esc(x.t)}</h3>
+      <h3 class="title" data-open="${x.k}">${esc(x.t)}</h3>
       <div class="price">${x.old ? `<span class="old">${brl(x.old)}</span>` : ""}<span class="now ${x.deal ? "deal" : ""}">${brl(x.price)}</span></div>
+      <button class="more-info" data-open="${x.k}">${x.gift ? "Ver o que vem no kit" : "Ver detalhes"}</button>
       ${ctl}
     </div></article>`;
 }
@@ -449,7 +483,7 @@ document.getElementById("allGifts").addEventListener("click", () => {
   S.cat = "__presentes"; fillCats(); document.getElementById("cat").value = S.cat; render(true);
   document.querySelector(".catalog-head").scrollIntoView({ behavior: "smooth" });
 });
-// abertura: números e três presentes em destaque
+// abertura: três presentes em destaque
 (function () {
   const pick = [], used = new Set();
   for (const k of FEAT.G) { const x = BYK[k]; if (x && x.price >= 150 && FEATPH[k] && !used.has(x.b + x.line)) { pick.push(x); used.add(x.b + x.line); } if (pick.length === 3) break; }
@@ -482,11 +516,72 @@ function change(k, d) {
   const q = Math.max(0, (cart[k] || 0) + d);
   if (q) cart[k] = q; else delete cart[k];
   saveCart(); refreshCard(k); updateCart();
+  if (pdKey === k) pdActions();
   if (d > 0 && q === 1) toast("Adicionado à sacola");
 }
 document.addEventListener("click", e => {
-  const inc = e.target.closest("[data-inc]"), dec = e.target.closest("[data-dec]");
-  if (inc) change(inc.dataset.inc, 1); else if (dec) change(dec.dataset.dec, -1);
+  const inc = e.target.closest("[data-inc]"), dec = e.target.closest("[data-dec]"), op = e.target.closest("[data-open]");
+  if (inc) change(inc.dataset.inc, 1); else if (dec) change(dec.dataset.dec, -1); else if (op) openProduct(op.dataset.open);
+});
+
+// detalhes do produto (texto da revista), carregados por revista quando abertos
+const DET = {}, detLoading = {};
+function loadDetails(b) {
+  if (!detLoading[b]) detLoading[b] = fetch("detalhes-" + b + ".json").then(r => r.json()).then(m => { DET[b] = m; }).catch(() => { DET[b] = {}; });
+  return detLoading[b];
+}
+function detailHTML(txt) {
+  if (!txt) return `<p class="loading">Sem descrição na revista. A Luciana tira suas dúvidas pelo WhatsApp.</p>`;
+  const lines = txt.split("\n"); let html = "", list = [], kit = null;
+  const flush = () => { if (list.length) { html += "<ul>" + list.map(l => `<li>${esc(cap(l))}</li>`).join("") + "</ul>"; list = []; } };
+  for (let ln of lines) {
+    if (kit) { kit.push(ln.replace(/^[•\-–]\s*/, "")); continue; }
+    if (/^(cont[eé]m|o kit cont[eé]m|o presente cont[eé]m|itens do kit|composi[cç][aã]o do kit)\s*:?\s*$/i.test(ln)) { flush(); kit = []; continue; }
+    if (/^[•\-–]\s*/.test(ln)) list.push(ln.replace(/^[•\-–]\s*/, "")); else { flush(); html += `<p>${esc(cap(ln))}</p>`; }
+  }
+  flush();
+  if (kit && kit.length) html += `<h4>O que vem no kit</h4><ul class="pd-kit">` + kit.map(l => `<li>${esc(cap(l))}</li>`).join("") + "</ul>";
+  return html;
+}
+let pdKey = null, pdLast = null;
+function pdActions() {
+  const x = BYK[pdKey], q = cart[x.k] || 0, el = document.getElementById("pdAct");
+  el.innerHTML = (q ? `<div class="qty"><button data-dec="${x.k}" aria-label="Tirar um">−</button><span>${q}</span><button data-inc="${x.k}" aria-label="Pôr mais um">+</button></div>`
+    : `<button class="add" data-inc="${x.k}">Adicionar à sacola</button>`) +
+    `<a class="wa-btn" href="${waLink("Olá, Luciana. Tenho interesse neste produto da revista do ciclo 18: " + x.t + " (" + BRANDS[x.b] + ", cód. " + x.sku + ").")}" target="_blank" rel="noopener" style="justify-content:center">Perguntar no WhatsApp</a>`;
+}
+function openProduct(k) {
+  const x = BYK[k]; if (!x) return;
+  pdKey = k; pdLast = document.activeElement;
+  const src = photoSrc(x);
+  document.getElementById("pdPhoto").innerHTML = (src ? `<img src="${src}" alt="${esc(x.t)}">` : `<span class="ghost"></span>`) + (x.off ? `<span class="badge">−${x.off}%</span>` : "");
+  const tierTxt = x.tiers ? x.tiers.slice(1).map((v, i) => `${i + 2} un.: ${brl(v)} cada`).join(" · ") : "";
+  document.getElementById("pdInfo").innerHTML = `
+    <div class="line">${esc([BRANDS[x.b], x.line].filter(Boolean).join(" · "))}</div>
+    <h2 id="pdTitle">${esc(x.t)}</h2>
+    <div class="price">${x.old ? `<span class="old">${brl(x.old)}</span>` : ""}<span class="now ${x.deal ? "deal" : ""}">${brl(x.price)}</span></div>
+    ${x.old ? `<span class="save">Economize ${brl(x.old - x.price)}</span>` : ""}
+    ${tierTxt ? `<div class="tiers">${tierTxt}</div>` : ""}
+    <div class="code">Cód. ${x.sku} · ${esc(x.cat)}</div>
+    <div class="pd-desc" id="pdDesc">${DET[x.b] ? detailHTML(DET[x.b][k]) : `<p class="loading">Carregando detalhes…</p>`}</div>
+    <div class="pd-actions" id="pdAct"></div>`;
+  pdActions();
+  document.getElementById("pd").hidden = false; document.getElementById("pdScrim").hidden = false;
+  document.getElementById("pdInfo").scrollTop = 0; document.getElementById("pd").scrollTop = 0;
+  document.getElementById("pdClose").focus();
+  if (!DET[x.b]) loadDetails(x.b).then(() => { if (pdKey === k) document.getElementById("pdDesc").innerHTML = detailHTML(DET[x.b][k]); });
+  if (!src) loadPhotos(x.b).then(() => { if (pdKey === k && photoSrc(x)) document.getElementById("pdPhoto").innerHTML = `<img src="${photoSrc(x)}" alt="${esc(x.t)}">` + (x.off ? `<span class="badge">−${x.off}%</span>` : ""); });
+}
+function closeProduct() {
+  if (!pdKey) return;
+  pdKey = null; document.getElementById("pd").hidden = true; document.getElementById("pdScrim").hidden = true;
+  if (pdLast && pdLast.focus) pdLast.focus();
+}
+document.getElementById("pdClose").addEventListener("click", closeProduct);
+document.getElementById("pdScrim").addEventListener("click", closeProduct);
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && pdKey) closeProduct();
+  else if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches(".ph[data-open], .title[data-open]")) { e.preventDefault(); openProduct(e.target.dataset.open); }
 });
 
 let tt; function toast(m) { const t = document.getElementById("toast"); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, 1600); }
