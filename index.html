@@ -337,8 +337,7 @@ footer.site p { margin: 0 0 6px; max-width: 80ch; }
     <div class="total"><span>Total estimado</span><span id="tot"></span></div>
     <p class="note">Promoções "leve mais, pague menos" já aplicadas pela quantidade de cada item.</p>
     <a class="shop-btn primary" id="lojaCart" href="#" target="_blank" rel="noopener">Comprar no site com entrega em casa</a>
-    <p class="note" id="lojaNote"></p>
-    <button class="clear" id="resend" hidden>Enviar a sacola inteira de novo</button>
+    <p class="note">Leva estes itens para a sacola da loja da Luciana no site da Natura. Lá você faz seu cadastro e paga. Itens que ainda não estão à venda no site ficam de fora, então confira a sacola antes de pagar.</p>
     <div class="or"><span>ou</span></div>
     <label for="nome">Seu nome (para o pedido no WhatsApp)<input id="nome" type="text" placeholder="Como a Luciana te chama" autocomplete="name"></label>
     <a class="wa-btn" id="send" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>Pedir pela Luciana no WhatsApp</a>
@@ -419,9 +418,6 @@ let cart = {};
 try { cart = JSON.parse(localStorage.getItem("sacola-c18") || "{}") || {}; } catch (e) { cart = {}; }
 for (const k of Object.keys(cart)) if (!BYK[k]) delete cart[k];
 let nome = ""; try { nome = localStorage.getItem("nome-cliente") || ""; } catch (e) {}
-let sent = { t: 0, items: {} };
-try { const s = JSON.parse(localStorage.getItem("enviado-c18") || "null"); if (s && s.items && Date.now() - s.t < 6 * 3600e3) sent = s; } catch (e) {}
-const saveSent = () => { try { localStorage.setItem("enviado-c18", JSON.stringify(sent)); } catch (e) {} };
 const saveCart = () => { try { localStorage.setItem("sacola-c18", JSON.stringify(cart)); } catch (e) {} };
 const unitPrice = (x, q) => x.tiers ? x.tiers[Math.min(q, x.tiers.length) - 1] : x.price;
 
@@ -645,24 +641,8 @@ function updateCart() {
     .concat(L.map(({ x, q, u, sub }) => `• ${q}x ${x.t} (${BRANDS[x.b]}, cód. ${x.sku}) — ${brl(u)} cada = ${brl(sub)}`))
     .concat(["", "Total estimado: " + brl(tot)]).concat(nm ? ["Nome: " + nm] : []).join("\n");
   document.getElementById("send").href = waLink(msg);
-  // a loja da Natura soma o que chega na sacola dela; então só mandamos o que ainda não foi enviado
-  const pid = x => (x.b === "natura" ? "NATBRA-" : "AVNBRA-") + x.sku;
-  const delta = L.map(({ x, q }) => ({ productId: pid(x), quantity: q - (sent.items[x.k] || 0) })).filter(d => d.quantity > 0);
-  const wasSent = Object.keys(sent.items).length > 0;
-  const lc = document.getElementById("lojaCart"), ln = document.getElementById("lojaNote");
-  const base = "https://www.minhaloja.natura.com/sacola?consultoria=" + LOJA;
-  lc.href = delta.length ? base + "&sharebasket=" + encodeURIComponent(JSON.stringify(delta)) : base;
-  if (!wasSent) {
-    lc.textContent = "Comprar no site com entrega em casa";
-    ln.textContent = "Leva estes itens para a sacola da loja da Luciana no site da Natura. Lá você faz seu cadastro e paga. Itens que ainda não estão à venda no site ficam de fora, então confira a sacola antes de pagar.";
-  } else if (delta.length) {
-    lc.textContent = "Enviar os itens novos para o site";
-    ln.textContent = "Os itens que você já enviou continuam na sacola do site. Só os novos serão adicionados. Para tirar ou trocar itens, ajuste direto na sacola do site.";
-  } else {
-    lc.textContent = "Abrir minha sacola no site";
-    ln.textContent = "Esta sacola já foi enviada para o site. Abrir de novo não repete os produtos. Para tirar ou trocar itens, ajuste direto na sacola do site.";
-  }
-  document.getElementById("resend").hidden = !wasSent;
+  const basket = L.map(({ x, q }) => ({ productId: (x.b === "natura" ? "NATBRA-" : "AVNBRA-") + x.sku, quantity: q }));
+  document.getElementById("lojaCart").href = "https://www.minhaloja.natura.com/sacola?consultoria=" + LOJA + "&sharebasket=" + encodeURIComponent(JSON.stringify(basket));
 }
 document.getElementById("lojaTop").href = lojaHome();
 document.getElementById("waTop").href = waLink("Olá, Luciana. Vi as revistas do ciclo 18 e tenho uma dúvida.");
@@ -676,14 +656,9 @@ document.getElementById("close").addEventListener("click", () => openCart(false)
 scrim.addEventListener("click", () => openCart(false));
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !drawer.hidden) openCart(false); });
 let armed = false;
-document.getElementById("lojaCart").addEventListener("click", () => {
-  for (const [k, q] of Object.entries(cart)) sent.items[k] = Math.max(sent.items[k] || 0, q);
-  sent.t = Date.now(); saveSent(); setTimeout(updateCart, 0);
-});
-document.getElementById("resend").addEventListener("click", () => { sent = { t: 0, items: {} }; saveSent(); updateCart(); toast("Pronto para enviar a sacola inteira"); });
 document.getElementById("clear").addEventListener("click", e => {
   if (!armed) { armed = true; e.currentTarget.textContent = "Toque de novo para esvaziar"; setTimeout(() => { armed = false; e.target.textContent = "Esvaziar sacola"; }, 3000); return; }
-  const keys = Object.keys(cart); cart = {}; saveCart(); sent = { t: 0, items: {} }; saveSent(); armed = false; e.currentTarget.textContent = "Esvaziar sacola"; keys.forEach(refreshCard); updateCart(); openCart(false);
+  const keys = Object.keys(cart); cart = {}; saveCart(); armed = false; e.currentTarget.textContent = "Esvaziar sacola"; keys.forEach(refreshCard); updateCart(); openCart(false);
 });
 const _paint = paintPhotos; paintPhotos = function () { _paint(); if (!drawer.hidden) updateCart(); };
 
