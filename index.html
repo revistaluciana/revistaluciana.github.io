@@ -658,7 +658,7 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && !drawer.hi
 let armed = false;
 document.getElementById("clear").addEventListener("click", e => {
   if (!armed) { armed = true; e.currentTarget.textContent = "Toque de novo para esvaziar"; setTimeout(() => { armed = false; e.target.textContent = "Esvaziar sacola"; }, 3000); return; }
-  cart = {}; saveCart(); armed = false; e.currentTarget.textContent = "Esvaziar sacola"; updateCart(); render(true); openCart(false);
+  const keys = Object.keys(cart); cart = {}; saveCart(); armed = false; e.currentTarget.textContent = "Esvaziar sacola"; keys.forEach(refreshCard); updateCart(); openCart(false);
 });
 const _paint = paintPhotos; paintPhotos = function () { _paint(); if (!drawer.hidden) updateCart(); };
 
