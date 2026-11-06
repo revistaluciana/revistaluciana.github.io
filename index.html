@@ -453,7 +453,7 @@ document.getElementById("allGifts").addEventListener("click", () => {
 (function () {
   const pick = [], used = new Set();
   for (const k of FEAT.G) { const x = BYK[k]; if (x && x.price >= 150 && FEATPH[k] && !used.has(x.b + x.line)) { pick.push(x); used.add(x.b + x.line); } if (pick.length === 3) break; }
-  document.getElementById("heroArt").innerHTML = pick.map((x, i) => `<div class="arch a${i + 1}"><img src="${photoSrc(x)}" alt=""><span class="tag">${brl(x.price)}</span></div>`).join("");
+  document.getElementById("heroArt").innerHTML = pick.map((x, i) => `<div class="arch a${i + 1}"><img src="${photoSrc(x)}" alt=""></div>`).join("");
 })();
 
 // contadores das abas
