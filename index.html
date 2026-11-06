@@ -199,7 +199,7 @@ main .wrap { padding-block: 18px 120px; }
 .it .mini { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .it .mini button { border: 0; background: var(--bg); width: 28px; height: 26px; cursor: pointer; font-weight: 700; }
 .it .mini span { min-width: 26px; text-align: center; line-height: 26px; font-size: 13px; }
-.foot { padding: 14px 18px 18px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.foot { padding: 14px 18px 18px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; max-height: 64%; overflow-y: auto; }
 .foot label { font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
 .foot input { padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
 .total { display: flex; justify-content: space-between; font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
@@ -238,6 +238,10 @@ main .wrap { padding-block: 18px 120px; }
 .btn-ghost:hover { background: rgba(255,255,255,.1); }
 .shop-btn { display: block; text-align: center; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 999px; padding: 10px 16px; font-weight: 700; text-decoration: none; }
 .shop-btn:hover { border-color: var(--accent); color: var(--accent); }
+.shop-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; padding-block: 12px; }
+.shop-btn.primary:hover { filter: brightness(1.08); color: #fff; }
+.or { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .1em; }
+.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 footer.site { border-top: 1px solid var(--line); }
 footer.site .wrap { padding-block: 20px 100px; font-size: 12px; color: var(--muted); max-width: 1180px; }
 footer.site p { margin: 0 0 6px; max-width: 80ch; }
@@ -330,11 +334,14 @@ footer.site p { margin: 0 0 6px; max-width: 80ch; }
   <header><h2>Sua sacola</h2><button class="x" id="close" aria-label="Fechar sacola">×</button></header>
   <div class="items" id="items"></div>
   <div class="foot">
-    <label for="nome">Seu nome<input id="nome" type="text" placeholder="Como a Luciana te chama" autocomplete="name"></label>
     <div class="total"><span>Total estimado</span><span id="tot"></span></div>
     <p class="note">Promoções "leve mais, pague menos" já aplicadas pela quantidade de cada item.</p>
-    <a class="wa-btn" id="send" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>Enviar pedido pelo WhatsApp</a>
-    <a class="shop-btn" id="lojaCart" href="#" target="_blank" rel="noopener">Prefere receber em casa? Compre no site</a>
+    <a class="shop-btn primary" id="lojaCart" href="#" target="_blank" rel="noopener">Comprar no site com entrega em casa</a>
+    <p class="note">Leva estes itens para a sacola da loja da Luciana no site da Natura. Lá você faz seu cadastro e paga. Itens que ainda não estão à venda no site ficam de fora, então confira a sacola antes de pagar.</p>
+    <div class="or"><span>ou</span></div>
+    <label for="nome">Seu nome (para o pedido no WhatsApp)<input id="nome" type="text" placeholder="Como a Luciana te chama" autocomplete="name"></label>
+    <a class="wa-btn" id="send" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>Pedir pela Luciana no WhatsApp</a>
+    
     <button class="clear" id="clear">Esvaziar sacola</button>
   </div>
 </aside>
@@ -634,9 +641,10 @@ function updateCart() {
     .concat(L.map(({ x, q, u, sub }) => `• ${q}x ${x.t} (${BRANDS[x.b]}, cód. ${x.sku}) — ${brl(u)} cada = ${brl(sub)}`))
     .concat(["", "Total estimado: " + brl(tot)]).concat(nm ? ["Nome: " + nm] : []).join("\n");
   document.getElementById("send").href = waLink(msg);
+  const basket = L.map(({ x, q }) => ({ productId: (x.b === "natura" ? "NATBRA-" : "AVNBRA-") + x.sku, quantity: q }));
+  document.getElementById("lojaCart").href = "https://www.minhaloja.natura.com/sacola?consultoria=" + LOJA + "&sharebasket=" + encodeURIComponent(JSON.stringify(basket));
 }
 document.getElementById("lojaTop").href = lojaHome();
-document.getElementById("lojaCart").href = lojaHome();
 document.getElementById("waTop").href = waLink("Olá, Luciana. Vi as revistas do ciclo 18 e tenho uma dúvida.");
 const nomeEl = document.getElementById("nome"); nomeEl.value = nome;
 nomeEl.addEventListener("input", () => { try { localStorage.setItem("nome-cliente", nomeEl.value); } catch (e) {} updateCart(); });
