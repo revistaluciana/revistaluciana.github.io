@@ -99,12 +99,12 @@ button, input, select { font: inherit; color: inherit; }
 .stats dt { font-size: 12px; color: var(--hero-muted); text-transform: uppercase; letter-spacing: .08em; }
 .stats dd { margin: 0; font-family: var(--font-display); font-size: 30px; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .hero-art { position: relative; height: 380px; max-width: 100%; }
-.arch { position: absolute; background: var(--frame); border-radius: 999px 999px 22px 22px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.35); display: grid; place-items: center; }
-.arch img { width: 86%; height: 86%; object-fit: contain; }
+.arch { position: absolute; background: var(--frame); border-radius: 999px 999px 22px 22px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.35); aspect-ratio: 5 / 6; max-width: 100%; }
+.arch img { position: absolute; left: 2%; bottom: 3%; width: 96%; max-width: none; height: auto; aspect-ratio: 1; object-fit: contain; }
 .arch .tag { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); background: var(--hero); color: var(--hero-ink); font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.arch.a1 { width: 46%; height: 88%; left: 27%; top: 0; z-index: 2; }
-.arch.a2 { width: 34%; height: 64%; left: 0; top: 30%; }
-.arch.a3 { width: 34%; height: 64%; right: 0; top: 18%; }
+.arch.a1 { width: 48%; left: 26%; top: 0; z-index: 2; }
+.arch.a2 { width: 36%; left: 0; top: 34%; }
+.arch.a3 { width: 36%; right: 0; top: 20%; }
 @media (max-width: 760px) { .hero-in { grid-template-columns: 1fr; padding-block: 28px 30px; } .hero-art { height: 250px; order: -1; } }
 
 /* Vitrines */
